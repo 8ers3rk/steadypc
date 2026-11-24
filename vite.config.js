@@ -11,7 +11,8 @@ function injectCsp(command) {
     transformIndexHtml: {
       order: 'pre',
       handler(html) {
-        return html.replace('__STEADYPC_CSP__', command === 'serve' ? csp.dev : csp.prod);
+        const normalized = html.replace(/\r\n/g, '\n');
+        return normalized.replace('__STEADYPC_CSP__', command === 'serve' ? csp.dev : csp.prod);
       },
     },
   };

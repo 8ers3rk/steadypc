@@ -43,7 +43,8 @@ test('both policies hash the inline theme script', () => {
   const script = html.match(/<script>([\s\S]*?)<\/script>/);
   assert.ok(script, 'inline theme script is missing');
 
-  const hash = crypto.createHash('sha256').update(script[1], 'utf8').digest('base64');
+  const normalized = script[1].replace(/\r\n/g, '\n');
+  const hash = crypto.createHash('sha256').update(normalized, 'utf8').digest('base64');
   for (const [name, csp] of Object.entries(policies)) {
     assert.ok(csp.includes(`'sha256-${hash}'`), `${name} CSP is missing the theme script hash`);
   }
