@@ -1,0 +1,67 @@
+{
+  "minerNames": [
+    "xmrig",
+    "xmrig-notls",
+    "ethminer",
+    "nbminer",
+    "lolminer",
+    "cgminer",
+    "bfgminer",
+    "teamredminer",
+    "phoenixminer",
+    "t-rex",
+    "trex",
+    "gminer",
+    "srbminer",
+    "kawpowminer",
+    "ravencoinminer",
+    "minerd",
+    "cpuminer"
+  ],
+  "minerCommandPatterns": [
+    "stratum+tcp://",
+    "stratum+ssl://",
+    "stratum+ws://",
+    "pool.",
+    "miningpoolhub",
+    "nicehash",
+    "ethermine",
+    "f2pool",
+    "--coin=",
+    "-o stratum"
+  ],
+  "minerPorts": [3333, 4444, 5555, 7777, 14433, 14444, 16333, 19999, 33333],
+  "minerPortRanges": [[8000, 9999]],
+  "suspiciousCommandPatterns": [
+    "-enc ",
+    "-encodedcommand",
+    "frombase64string",
+    "iex",
+    "invoke-expression",
+    "downloadstring",
+    "downloadfile",
+    "bypass -nop",
+    "-nop -w hidden"
+  ],
+  "suspiciousPathFragments": [
+    "\\temp\\",
+    "\\appdata\\roaming\\",
+    "\\downloads\\",
+    "\\programdata\\",
+    "\\public\\",
+    "\\users\\public\\"
+  ],
+  "systemProcessNames": [
+    "svchost.exe",
+    "lsass.exe",
+    "csrss.exe",
+    "winlogon.exe",
+    "smss.exe",
+    "services.exe",
+    "wininit.exe"
+  ],
+  "systemProcessDirectories": [
+    "c:\\windows\\system32",
+    "c:\\windows\\syswow64"
+  ]
+}

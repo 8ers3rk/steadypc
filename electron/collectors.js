@@ -4,7 +4,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
-const { scoreFindings } = require('./scoring');
+const { scoreReportFindings } = require('./scoring');
+const { finding, check } = require('./finding');
 const { ps, psChecked, run, isAdmin, POWER_PLANS, parseTcpLevel } = require('./commands');
 
 const APP_VERSION = require('../package.json').version;
@@ -27,36 +28,6 @@ function formatUptime(seconds) {
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   return { text: `${days} д ${hours} ч ${minutes} мин`, seconds };
-}
-
-function finding(config) {
-  return {
-    id: config.id,
-    category: config.category,
-    title: config.title,
-    summary: config.summary,
-    details: config.details || [],
-    evidence: config.evidence || [],
-    severity: config.severity || 'low',
-    risk: config.risk || 'low',
-    confidence: config.confidence || 'high',
-    reversible: Boolean(config.reversible),
-    recommended: Boolean(config.recommended),
-    presets: config.presets || [],
-    action: config.action || null,
-  };
-}
-
-function check(config) {
-  return {
-    id: config.id,
-    category: config.category,
-    title: config.title,
-    status: config.status || 'ok',
-    summary: config.summary || '',
-    result: config.result || '',
-    evidence: config.evidence || [],
-  };
 }
 
 async function parseJsonPs(script, label, fallback) {
@@ -956,7 +927,7 @@ async function runScan() {
     metrics,
     findings,
     checks,
-    score: scoreFindings(findings),
+    score: scoreReportFindings(findings),
     warnings,
   };
 }

@@ -48,4 +48,8 @@ function scoreFindings(findings) {
   return { value, status, penalty, breakdown };
 }
 
-module.exports = { scoreFindings, SEVERITY_WEIGHT, CATEGORY_CAP };
+function scoreReportFindings(findings) {
+  return scoreFindings(findings.filter((item) => item.category !== 'security'));
+}
+
+module.exports = { scoreFindings, scoreReportFindings, SEVERITY_WEIGHT, CATEGORY_CAP };
