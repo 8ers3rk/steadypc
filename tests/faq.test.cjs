@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const content = require('../src/faq-content.json');
 
-const REQUIRED_SECTIONS = ['about', 'expectations', 'claims', 'indicators', 'signatures'];
+const REQUIRED_SECTIONS = ['about', 'expectations', 'claims', 'indicators', 'not-antivirus', 'signatures'];
 const BRANDS = ['norton', 'mcafee', 'kaspersky', 'avast', 'avg', 'iobit', 'ccleaner', 'glary', 'wise cleaner'];
 
 for (const lang of ['ru', 'en']) {

@@ -87,6 +87,7 @@ export function ScorePanel({ score, t }: { score: Score; t: T }) {
       <div className="score-info">
         <div className="score-label">{t('score.title')}</div>
         <div className="score-status">{t(`score.${score.status}`)}</div>
+        <div className="score-note">{t('score.note')}</div>
         <div className="score-note">
           {t('score.breakdown')}: {score.breakdown.length}
         </div>
@@ -269,6 +270,13 @@ export function ScanView({ report, busy, selected, onToggle, onScan, lang, t }: 
         </div>
       ) : null}
 
+      {report && (
+        <div className="notice warn" role="note">
+          <AlertTriangle size={16} />
+          <span>{t('security.noAntivirus')}</span>
+        </div>
+      )}
+
       {report ? (
         <>
           <ChecksPanel checks={report.checks || []} t={t} />
@@ -295,6 +303,7 @@ export function ScanView({ report, busy, selected, onToggle, onScan, lang, t }: 
 interface PlanViewProps {
   report: ScanReport | null;
   presets: Preset[];
+  activePreset: string;
   selected: Set<string>;
   preview: PreviewAction[];
   outcome: ApplyOutcome | null;
@@ -303,12 +312,14 @@ interface PlanViewProps {
   onToggle: (id: string) => void;
   onApply: () => void;
   onRestartAdmin: () => void;
+  lang: Lang;
   t: T;
 }
 
 export function PlanView({
   report,
   presets,
+  activePreset,
   selected,
   preview,
   outcome,
@@ -317,9 +328,11 @@ export function PlanView({
   onToggle,
   onApply,
   onRestartAdmin,
+  lang,
   t,
 }: PlanViewProps) {
   const actionable = report?.findings.filter((finding) => finding.action) || [];
+  const preset = presets.find((item) => item.id === activePreset);
 
   return (
     <div className="page">
@@ -353,6 +366,11 @@ export function PlanView({
             <div className="selection-count">
               {t('common.selected')}: {selected.size} {t('common.of')} {actionable.length}
             </div>
+            {preset && (
+              <div className="selection-count">
+                <strong>{preset.title}:</strong> {preset.description} {t('plan.presetHint')}
+              </div>
+            )}
           </section>
 
           {outcome?.needsAdmin && (
@@ -406,7 +424,7 @@ export function PlanView({
             findings={actionable}
             selected={selected}
             onToggle={onToggle}
-            lang="ru"
+            lang={lang}
             selectable
             t={t}
           />

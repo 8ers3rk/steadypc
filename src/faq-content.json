@@ -37,6 +37,15 @@
       ]
     },
     {
+      "id": "not-antivirus",
+      "title": "Почему это не антивирус",
+      "items": [
+        "SteadyPC не проверяет файлы антивирусными базами, не лечит систему и не заменяет встроенную защиту Windows.",
+        "Проверка ищет только простые локальные признаки и пропускает сложные или новые угрозы. Отсутствие индикаторов не означает, что система защищена.",
+        "Если индикатор найден, проверьте путь, подпись и командную строку другим инструментом. SteadyPC не будет удалять файлы или завершать процессы."
+      ]
+    },
+    {
       "id": "signatures",
       "title": "Свои признаки",
       "items": [
@@ -81,6 +90,15 @@
         "Checks for miners, suspicious processes, startup entries and scheduled tasks use a local list of signals, not cloud databases.",
         "A matching signal is a reason to inspect the path, signature and command line, not a reason to delete anything.",
         "SteadyPC never terminates processes, deletes files or puts anything into quarantine."
+      ]
+    },
+    {
+      "id": "not-antivirus",
+      "title": "Why this is not an antivirus",
+      "items": [
+        "SteadyPC does not scan files with antivirus databases, does not clean infections and does not replace built-in Windows protection.",
+        "The check looks only for simple local signals and misses sophisticated or new threats. No indicators does not mean the system is protected.",
+        "If an indicator appears, verify the path, signature and command line with another tool. SteadyPC will not delete files or terminate processes."
       ]
     },
     {

@@ -53,6 +53,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>('overview');
   const [appInfo, setAppInfo] = useState<AppInfo | null>(null);
   const [presets, setPresets] = useState<Preset[]>([]);
+  const [activePreset, setActivePreset] = useState('balanced');
   const [report, setReport] = useState<ScanReport | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [preview, setPreview] = useState<PreviewAction[]>([]);
@@ -138,6 +139,7 @@ export default function App() {
       const next = await api().runScan();
       setReport(next);
       const ids = await api().selectPreset('balanced');
+      setActivePreset('balanced');
       setSelected(new Set(ids));
       setOutcome(null);
       setComparison(null);
@@ -151,6 +153,7 @@ export default function App() {
   const handlePreset = useCallback(async (presetId: string) => {
     try {
       const ids = await api().selectPreset(presetId);
+      setActivePreset(presetId);
       setSelected(new Set(ids));
     } catch (caught) {
       setError(messageOf(caught));
@@ -178,6 +181,7 @@ export default function App() {
       setComparison({ before, after, results: result.results, restorePoint: result.restorePoint });
       setJournal(await api().getJournal());
       const ids = await api().selectPreset('balanced');
+      setActivePreset('balanced');
       setSelected(new Set(ids));
       setTab('report');
     } catch (caught) {
@@ -272,6 +276,7 @@ export default function App() {
         <PlanView
           report={report}
           presets={presets}
+          activePreset={activePreset}
           selected={selected}
           preview={preview}
           outcome={outcome}
@@ -280,6 +285,7 @@ export default function App() {
           onToggle={toggleFinding}
           onApply={handleApply}
           onRestartAdmin={handleRestartAdmin}
+          lang={lang}
           t={t}
         />
       )}
