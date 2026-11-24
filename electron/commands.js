@@ -5,6 +5,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFile, execFileSync } = require('child_process');
 const { promisify } = require('util');
+const { validateCommandParams } = require('./validation');
 
 const execFileAsync = promisify(execFile);
 
@@ -444,7 +445,7 @@ function listTools() {
 async function executeCommand(commandId, params) {
   const command = commands[commandId];
   if (!command) throw new Error(`Неизвестная команда: ${commandId}`);
-  const result = await command.execute(params || {});
+  const result = await command.execute(validateCommandParams(commandId, params || {}));
   return {
     commandId,
     title: command.title,

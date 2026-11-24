@@ -7,6 +7,14 @@ const { runScan } = require('./collectors');
 const { PRESETS, selectedForPreset, buildPreview } = require('./plan');
 const { executeCommand, rollbackCommand, isAdmin, createRestorePoint, restartAsAdmin, commands, listTools } = require('./commands');
 const { readJournal, addEntry, markRolledBack } = require('./journal');
+const {
+  validatePresetId,
+  validateIds,
+  validateToolId,
+  validateEntryId,
+  validateSecurityPath,
+  validateSecurityText,
+} = require('./validation');
 
 let mainWindow = null;
 let lastScan = null;
@@ -53,19 +61,19 @@ ipcMain.handle('plan:presets', () => PRESETS);
 
 ipcMain.handle('plan:select-preset', (event, presetId) => {
   if (!lastScan) return [];
-  return selectedForPreset(lastScan.findings, presetId);
+  return selectedForPreset(lastScan.findings, validatePresetId(presetId, PRESETS));
 });
 
 ipcMain.handle('plan:preview', (event, ids) => {
   if (!lastScan) return [];
-  return buildPreview(lastScan.findings, Array.isArray(ids) ? ids : []);
+  return buildPreview(lastScan.findings, validateIds(ids, lastScan.findings.map((item) => item.id)));
 });
 
 ipcMain.handle('plan:apply', async (event, ids) => {
   if (!lastScan) throw new Error('Сначала выполните сканирование');
   if (applying) throw new Error('Другое применение уже выполняется');
 
-  const actions = buildPreview(lastScan.findings, Array.isArray(ids) ? ids : []);
+  const actions = buildPreview(lastScan.findings, validateIds(ids, lastScan.findings.map((item) => item.id)));
   if (!actions.length) return { needsAdmin: false, restorePoint: null, results: [] };
 
   const needsAdmin = actions.some(requiresPrivileges) && !isAdmin();
@@ -119,7 +127,9 @@ ipcMain.handle('plan:apply', async (event, ids) => {
 ipcMain.handle('tools:list', () => listTools());
 
 ipcMain.handle('tools:run', async (event, id) => {
-  const tool = listTools().find((item) => item.id === id);
+  const tools = listTools();
+  const toolId = validateToolId(id, tools);
+  const tool = tools.find((item) => item.id === toolId);
   if (!tool) throw new Error('Неизвестный инструмент');
   if (tool.requiresSelection) {
     throw new Error('Выберите конкретную запись на экране диагностики');
@@ -184,10 +194,11 @@ ipcMain.handle('tools:run', async (event, id) => {
 });
 
 ipcMain.handle('plan:rollback', async (event, entryId) => {
-  const entry = readJournal(app).find((item) => item.id === entryId);
+  const id = validateEntryId(entryId);
+  const entry = readJournal(app).find((item) => item.id === id);
   if (!entry) throw new Error('Запись журнала не найдена');
   await rollbackCommand(entry.commandId, entry.rollbackData);
-  markRolledBack(app, entryId);
+  markRolledBack(app, id);
   return { success: true };
 });
 
@@ -204,22 +215,14 @@ ipcMain.handle('reboot-pc', () => {
 
 ipcMain.handle('app:restart-admin', () => restartAsAdmin());
 
-function securityTarget(value, maxLength) {
-  const text = typeof value === 'string' ? value.trim() : '';
-  if (!text || text.length > maxLength || text.includes('\0')) {
-    throw new Error('Некорректные данные для безопасного действия');
-  }
-  return text;
-}
-
 ipcMain.handle('security:reveal', (event, target) => {
-  const filePath = securityTarget(target, 512);
+  const filePath = validateSecurityPath(target, 512);
   shell.showItemInFolder(filePath);
   return { shown: true };
 });
 
 ipcMain.handle('security:copy', (event, target) => {
-  const text = securityTarget(target, 8192);
+  const text = validateSecurityText(target, 8192);
   clipboard.writeText(text);
   return { copied: true };
 });
