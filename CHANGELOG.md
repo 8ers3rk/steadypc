@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.2.0] - 2026-11-24
+
+### Added
+
+- Content Security Policy for the renderer: local scripts only by hash or bundle, no external frames, objects, workers or network destinations.
+- Strict validation for every IPC argument and command parameter, including registry paths, startup entries, drive letters, power plans, preset IDs and finding IDs.
+- Local structured logs in `%APPDATA%\SteadyPC\logs\` with rotation and sanitized values.
+- Private JSON and escaped HTML export of the scan report, comparison data and change journal through a native save dialog.
+- An in-app explanation that risk indicators are not an antivirus, plus a FAQ section on that limitation.
+
+### Changed
+
+- Replaced high/medium/low confidence wording with descriptions of the actual signals and recommended checks.
+- Renamed the score as an author-made settings score and documented that it is not a Windows health metric or a performance promise.
+- Presets now show their description in the plan view and are explicitly described as selectable recommendations.
+
+### Security
+
+- Renderer input can no longer choose arbitrary command parameters or safe-action targets.
+- Report exports stay local and contain no external resources.
+
 ## [1.1.0] - 2026-11-24
 
 ### Added
