@@ -5,6 +5,7 @@ import {
   CheckCircle2,
   Clock,
   Cpu,
+  Download,
   HardDrive,
   Info,
   MemoryStick,
@@ -36,6 +37,42 @@ import { formatBytes, formatDate } from '../lib/api';
 import { FindingList } from './Findings';
 
 type T = (key: string) => string;
+type ExportHandler = (format: 'json' | 'html') => void;
+
+function ExportButtons({
+  onExport,
+  busy,
+  t,
+}: {
+  onExport: ExportHandler;
+  busy: 'json' | 'html' | null;
+  t: T;
+}) {
+  return (
+    <div className="header-actions">
+      <button
+        type="button"
+        className="button small"
+        onClick={() => onExport('json')}
+        disabled={busy !== null}
+        title={t('report.exportHint')}
+      >
+        <Download size={14} />
+        {busy === 'json' ? t('common.loading') : t('report.exportJson')}
+      </button>
+      <button
+        type="button"
+        className="button small"
+        onClick={() => onExport('html')}
+        disabled={busy !== null}
+        title={t('report.exportHint')}
+      >
+        <Download size={14} />
+        {busy === 'html' ? t('common.loading') : t('report.exportHtml')}
+      </button>
+    </div>
+  );
+}
 
 function PageHeader({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return (
@@ -226,21 +263,36 @@ interface ScanViewProps {
   selected: Set<string>;
   onToggle: (id: string) => void;
   onScan: () => void;
+  onExport: ExportHandler;
+  exportBusy: 'json' | 'html' | null;
   lang: Lang;
   t: T;
 }
 
-export function ScanView({ report, busy, selected, onToggle, onScan, lang, t }: ScanViewProps) {
+export function ScanView({
+  report,
+  busy,
+  selected,
+  onToggle,
+  onScan,
+  onExport,
+  exportBusy,
+  lang,
+  t,
+}: ScanViewProps) {
   return (
     <div className="page">
       <PageHeader
         title={t('scan.title')}
         subtitle={t('scan.subtitle')}
         action={
-          <button type="button" className="button primary" onClick={onScan} disabled={busy}>
-            {busy ? <RefreshCw size={16} className="spin" /> : <Play size={16} />}
-            {busy ? t('scan.running') : t('scan.run')}
-          </button>
+          <div className="header-actions">
+            {report && <ExportButtons onExport={onExport} busy={exportBusy} t={t} />}
+            <button type="button" className="button primary" onClick={onScan} disabled={busy}>
+              {busy ? <RefreshCw size={16} className="spin" /> : <Play size={16} />}
+              {busy ? t('scan.running') : t('scan.run')}
+            </button>
+          </div>
         }
       />
 
@@ -552,6 +604,8 @@ export function ToolsView({
 
 interface ReportViewProps {
   comparison: Comparison | null;
+  onExport: ExportHandler;
+  exportBusy: 'json' | 'html' | null;
   lang: Lang;
   t: T;
 }
@@ -577,7 +631,7 @@ function DiffRow({
   );
 }
 
-export function ReportView({ comparison, lang, t }: ReportViewProps) {
+export function ReportView({ comparison, onExport, exportBusy, lang, t }: ReportViewProps) {
   if (!comparison) {
     return (
       <div className="page">
@@ -594,7 +648,11 @@ export function ReportView({ comparison, lang, t }: ReportViewProps) {
 
   return (
     <div className="page">
-      <PageHeader title={t('report.title')} subtitle={t('report.subtitle')} />
+      <PageHeader
+        title={t('report.title')}
+        subtitle={t('report.subtitle')}
+        action={<ExportButtons onExport={onExport} busy={exportBusy} t={t} />}
+      />
       <div className="notice ok">
         <CheckCircle2 size={16} />
         {t('report.rescan')}
@@ -678,11 +736,22 @@ function BarChart3Icon() {
 interface JournalViewProps {
   entries: JournalEntry[];
   onRollback: (id: string) => void;
+  canExport: boolean;
+  onExport: ExportHandler;
+  exportBusy: 'json' | 'html' | null;
   lang: Lang;
   t: T;
 }
 
-export function JournalView({ entries, onRollback, lang, t }: JournalViewProps) {
+export function JournalView({
+  entries,
+  onRollback,
+  canExport,
+  onExport,
+  exportBusy,
+  lang,
+  t,
+}: JournalViewProps) {
   if (!entries.length) {
     return (
       <div className="page">
@@ -697,7 +766,11 @@ export function JournalView({ entries, onRollback, lang, t }: JournalViewProps) 
 
   return (
     <div className="page">
-      <PageHeader title={t('journal.title')} subtitle={t('journal.subtitle')} />
+      <PageHeader
+        title={t('journal.title')}
+        subtitle={t('journal.subtitle')}
+        action={canExport ? <ExportButtons onExport={onExport} busy={exportBusy} t={t} /> : undefined}
+      />
       <div className="journal-list">
         {entries.map((entry) => (
           <article className="journal-card" key={entry.id}>

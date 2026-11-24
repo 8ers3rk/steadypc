@@ -171,6 +171,18 @@ function validateSecurityText(value, maxLength = 8192) {
   return plainText(value, maxLength, 'Текст', true);
 }
 
+function validateExportFormat(value) {
+  const format = plainText(value, 8, 'Формат экспорта');
+  if (format !== 'json' && format !== 'html') fail('Неизвестный формат экспорта');
+  return format;
+}
+
+function validateLanguage(value) {
+  const lang = plainText(value, 2, 'Язык');
+  if (lang !== 'ru' && lang !== 'en') fail('Неизвестный язык');
+  return lang;
+}
+
 module.exports = {
   POWER_PLAN_KEYS,
   STARTUP_REGISTRY_PATHS,
@@ -181,4 +193,6 @@ module.exports = {
   validateEntryId,
   validateSecurityPath,
   validateSecurityText,
+  validateExportFormat,
+  validateLanguage,
 };

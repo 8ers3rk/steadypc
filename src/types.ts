@@ -185,6 +185,13 @@ export interface AppInfo {
   packaged: boolean;
 }
 
+export interface ExportResult {
+  saved?: boolean;
+  cancelled?: boolean;
+  path?: string;
+  format?: string;
+}
+
 export interface Comparison {
   before: ScanReport;
   after: ScanReport;
@@ -201,6 +208,7 @@ export interface SteadyPCApi {
   applyPlan(ids: string[]): Promise<ApplyOutcome>;
   rollback(entryId: string): Promise<{ success: boolean }>;
   getJournal(): Promise<JournalEntry[]>;
+  exportReport(format: 'json' | 'html', lang: 'ru' | 'en'): Promise<ExportResult>;
   listTools(): Promise<ToolDefinition[]>;
   runTool(id: string): Promise<ToolRunResult>;
   reboot(): Promise<{ started: boolean }>;

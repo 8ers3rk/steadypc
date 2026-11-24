@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Layout } from './components/Layout';
 import { FaqDialog } from './components/FaqDialog';
 import {
@@ -66,6 +66,8 @@ export default function App() {
   const [busy, setBusy] = useState(false);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exportBusy, setExportBusy] = useState<'json' | 'html' | null>(null);
+  const [exportStatus, setExportStatus] = useState<string | null>(null);
   const [confirmReboot, setConfirmReboot] = useState(false);
   const [faqOpen, setFaqOpen] = useState(false);
 
@@ -238,6 +240,25 @@ export default function App() {
     }
   }, []);
 
+  const handleExport = useCallback(
+    async (format: 'json' | 'html') => {
+      setExportBusy(format);
+      setError(null);
+      setExportStatus(null);
+      try {
+        const result = await api().exportReport(format, lang);
+        if (result.cancelled) return;
+        if (!result.saved) throw new Error(t('error.title'));
+        setExportStatus(`${t('report.exportDone')}: ${result.path || ''}`);
+      } catch (caught) {
+        setError(messageOf(caught));
+      } finally {
+        setExportBusy(null);
+      }
+    },
+    [lang, t],
+  );
+
   return (
     <Layout
       lang={lang}
@@ -260,6 +281,16 @@ export default function App() {
         </div>
       )}
 
+      {exportStatus && (
+        <div className="notice ok" role="status">
+          <CheckCircle2 size={16} />
+          <span>{exportStatus}</span>
+          <button type="button" className="icon-button" onClick={() => setExportStatus(null)}>
+            ×
+          </button>
+        </div>
+      )}
+
       {tab === 'overview' && <OverviewView report={report} appInfo={appInfo} t={t} />}
       {tab === 'scan' && (
         <ScanView
@@ -268,6 +299,8 @@ export default function App() {
           selected={selected}
           onToggle={toggleFinding}
           onScan={runScan}
+          onExport={handleExport}
+          exportBusy={exportBusy}
           lang={lang}
           t={t}
         />
@@ -301,8 +334,26 @@ export default function App() {
           t={t}
         />
       )}
-      {tab === 'report' && <ReportView comparison={comparison} lang={lang} t={t} />}
-      {tab === 'journal' && <JournalView entries={journal} onRollback={handleRollback} lang={lang} t={t} />}
+      {tab === 'report' && (
+        <ReportView
+          comparison={comparison}
+          onExport={handleExport}
+          exportBusy={exportBusy}
+          lang={lang}
+          t={t}
+        />
+      )}
+      {tab === 'journal' && (
+        <JournalView
+          entries={journal}
+          onRollback={handleRollback}
+          canExport={Boolean(report)}
+          onExport={handleExport}
+          exportBusy={exportBusy}
+          lang={lang}
+          t={t}
+        />
+      )}
 
       {report?.metrics.rebootPending && (
         <button type="button" className="reboot-fab" onClick={() => setConfirmReboot(true)}>

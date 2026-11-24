@@ -11,6 +11,7 @@ contextBridge.exposeInMainWorld('steadypc', {
   applyPlan: (ids) => ipcRenderer.invoke('plan:apply', ids),
   rollback: (entryId) => ipcRenderer.invoke('plan:rollback', entryId),
   getJournal: () => ipcRenderer.invoke('journal:list'),
+  exportReport: (format, lang) => ipcRenderer.invoke('report:export', format, lang),
   listTools: () => ipcRenderer.invoke('tools:list'),
   runTool: (id) => ipcRenderer.invoke('tools:run', id),
   reboot: () => ipcRenderer.invoke('reboot-pc'),

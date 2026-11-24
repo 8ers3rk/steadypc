@@ -144,6 +144,10 @@ const messages: Record<Lang, Record<string, string>> = {
     'report.applied': 'Успешно применено',
     'report.failed': 'Не удалось применить',
     'report.rescan': 'Повторное сканирование выполнено автоматически.',
+    'report.exportJson': 'Экспорт JSON',
+    'report.exportHtml': 'Экспорт HTML',
+    'report.exportHint': 'Файл сохраняется локально и никуда не отправляется.',
+    'report.exportDone': 'Отчёт сохранён',
 
     'journal.title': 'Журнал изменений',
     'journal.subtitle': 'История применённых действий и доступных откатов.',
@@ -343,6 +347,10 @@ const messages: Record<Lang, Record<string, string>> = {
     'report.applied': 'Applied successfully',
     'report.failed': 'Failed to apply',
     'report.rescan': 'A second scan has been completed automatically.',
+    'report.exportJson': 'Export JSON',
+    'report.exportHtml': 'Export HTML',
+    'report.exportHint': 'The file is saved locally and is never sent anywhere.',
+    'report.exportDone': 'Report saved',
 
     'journal.title': 'Change journal',
     'journal.subtitle': 'Applied actions and available rollbacks.',
