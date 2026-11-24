@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Added eight offline risk-indicator checks for miners, suspicious processes, startup entries, scheduled tasks and built-in protection state.
+- Risk indicators are diagnostic only: they do not affect the health score, cannot be applied as changes and never trigger removal, process termination or quarantine.
+- Added a built-in signature list with an optional manual override at `%APPDATA%\SteadyPC\security-signatures.json`; no network is used.
+- Added safe actions on indicator cards: reveal the file, copy evidence and open Task Manager.
+- Added an in-app FAQ in Russian and English with no external links or product names.
+- Added tests for signature merging, heuristic confidence rules, score isolation and FAQ content.
+
 ## 1.0.0
 
 - Rewritten as SteadyPC: offline diagnostics with detailed, evidence-based findings.

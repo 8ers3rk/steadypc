@@ -205,6 +205,9 @@ export interface SteadyPCApi {
   runTool(id: string): Promise<ToolRunResult>;
   reboot(): Promise<{ started: boolean }>;
   restartAsAdmin(): Promise<{ started: boolean; reason: string | null }>;
+  revealPath(target: string): Promise<{ shown: boolean }>;
+  copyText(text: string): Promise<{ copied: boolean }>;
+  openTaskManager(): Promise<{ started: boolean }>;
 }
 
 declare global {

@@ -15,4 +15,7 @@ contextBridge.exposeInMainWorld('steadypc', {
   runTool: (id) => ipcRenderer.invoke('tools:run', id),
   reboot: () => ipcRenderer.invoke('reboot-pc'),
   restartAsAdmin: () => ipcRenderer.invoke('app:restart-admin'),
+  revealPath: (target) => ipcRenderer.invoke('security:reveal', target),
+  copyText: (text) => ipcRenderer.invoke('security:copy', text),
+  openTaskManager: () => ipcRenderer.invoke('security:open-task-manager'),
 });

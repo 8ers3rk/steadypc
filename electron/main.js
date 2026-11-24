@@ -1,7 +1,7 @@
 'use strict';
 
 const path = require('path');
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, clipboard, ipcMain, shell } = require('electron');
 const { spawn } = require('child_process');
 const { runScan } = require('./collectors');
 const { PRESETS, selectedForPreset, buildPreview } = require('./plan');
@@ -203,6 +203,32 @@ ipcMain.handle('reboot-pc', () => {
 });
 
 ipcMain.handle('app:restart-admin', () => restartAsAdmin());
+
+function securityTarget(value, maxLength) {
+  const text = typeof value === 'string' ? value.trim() : '';
+  if (!text || text.length > maxLength || text.includes('\0')) {
+    throw new Error('Некорректные данные для безопасного действия');
+  }
+  return text;
+}
+
+ipcMain.handle('security:reveal', (event, target) => {
+  const filePath = securityTarget(target, 512);
+  shell.showItemInFolder(filePath);
+  return { shown: true };
+});
+
+ipcMain.handle('security:copy', (event, target) => {
+  const text = securityTarget(target, 8192);
+  clipboard.writeText(text);
+  return { copied: true };
+});
+
+ipcMain.handle('security:open-task-manager', () => {
+  const child = spawn('taskmgr.exe', [], { detached: true, stdio: 'ignore' });
+  child.unref();
+  return { started: true };
+});
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) {

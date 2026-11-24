@@ -1,7 +1,19 @@
-import { useState } from 'react';
-import { AlertTriangle, Check, ChevronDown, Info, ShieldAlert } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  Activity,
+  AlertTriangle,
+  Check,
+  ChevronDown,
+  Copy,
+  FolderOpen,
+  Info,
+  ShieldAlert,
+} from 'lucide-react';
+import { api } from '../lib/api';
 import type { Finding } from '../types';
 import type { Lang } from '../i18n';
+
+type T = (key: string) => string;
 
 interface FindingListProps {
   findings: Finding[];
@@ -9,16 +21,106 @@ interface FindingListProps {
   onToggle: (id: string) => void;
   lang: Lang;
   selectable: boolean;
-  t: (key: string) => string;
+  t: T;
 }
 
-function RiskBadge({ finding, t }: { finding: Finding; t: (key: string) => string }) {
+function RiskBadge({ finding, t }: { finding: Finding; t: T }) {
   const tone = finding.risk === 'high' ? 'danger' : finding.risk === 'medium' ? 'warn' : 'safe';
   return (
     <span className={`badge ${tone}`}>
       {finding.risk === 'low' ? <Check size={12} /> : <AlertTriangle size={12} />}
       {t(`risk.${finding.risk}`)}
     </span>
+  );
+}
+
+function securityPath(finding: Finding): string | null {
+  const prefixes = ['Путь:', 'Команда:', 'Действие:'];
+  for (const line of finding.evidence) {
+    for (const prefix of prefixes) {
+      if (!line.startsWith(prefix)) continue;
+      const value = line.slice(prefix.length).trim();
+      if (!value || value === '—') return null;
+      const quoted = value.match(/^"([^"]+)"/);
+      const path = quoted ? quoted[1] : value.split(/\s+/)[0];
+      return path.length > 2 ? path : null;
+    }
+  }
+  return null;
+}
+
+function SecurityActions({ finding, t }: { finding: Finding; t: T }) {
+  const [busy, setBusy] = useState<'reveal' | 'copy' | 'tasks' | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
+  const target = useMemo(() => securityPath(finding), [finding]);
+  const payload = finding.evidence.join('\n');
+
+  async function run(kind: 'reveal' | 'copy' | 'tasks') {
+    setBusy(kind);
+    setMessage(null);
+    try {
+      if (kind === 'reveal' && target) await api().revealPath(target);
+      else if (kind === 'copy') await api().copyText(payload);
+      else await api().openTaskManager();
+      setMessage(t('security.status.done'));
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : String(caught));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="security-actions">
+      <div className="security-disclaimer">
+        <Info size={14} />
+        <span>{t('security.disclaimer')}</span>
+      </div>
+      <div className="detail-block">
+        <div className="detail-title">
+          <Activity size={14} />
+          {t('security.actions.title')}
+        </div>
+        <p className="security-advice">{t(`security.action.${finding.confidence}`)}</p>
+        <div className="security-button-row">
+          {target && (
+            <button
+              type="button"
+              className="button small"
+              disabled={busy !== null}
+              onClick={() => void run('reveal')}
+            >
+              <FolderOpen size={14} />
+              {t('security.button.reveal')}
+            </button>
+          )}
+          <button
+            type="button"
+            className="button small"
+            disabled={busy !== null}
+            onClick={() => void run('copy')}
+          >
+            <Copy size={14} />
+            {t('security.button.copy')}
+          </button>
+          <button
+            type="button"
+            className="button small"
+            disabled={busy !== null}
+            onClick={() => void run('tasks')}
+          >
+            <Activity size={14} />
+            {t('security.button.taskManager')}
+          </button>
+        </div>
+        {!target && <p className="security-hint">{t('security.noPath')}</p>}
+        {message && (
+          <p className="security-status" role="status">
+            {message}
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -33,9 +135,10 @@ function FindingCard({
   checked: boolean;
   onToggle: (id: string) => void;
   selectable: boolean;
-  t: (key: string) => string;
+  t: T;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const isSecurity = finding.category === 'security';
 
   return (
     <article className={`finding-card ${checked ? 'selected' : ''}`}>
@@ -57,17 +160,30 @@ function FindingCard({
         <div className="finding-main">
           <div className="finding-title-row">
             <h3>{finding.title}</h3>
-            <RiskBadge finding={finding} t={t} />
-            {finding.recommended && <span className="badge subtle">{t('common.recommended')}</span>}
-            {!finding.action && <span className="badge subtle">{t('common.optional')}</span>}
+            {isSecurity ? (
+              <>
+                <span className="badge subtle">{t('security.indicator')}</span>
+                <span className="badge subtle">{t(`security.confidence.${finding.confidence}`)}</span>
+              </>
+            ) : (
+              <>
+                <RiskBadge finding={finding} t={t} />
+                {finding.recommended && <span className="badge subtle">{t('common.recommended')}</span>}
+                {!finding.action && <span className="badge subtle">{t('common.optional')}</span>}
+              </>
+            )}
           </div>
           <p className="finding-summary">{finding.summary}</p>
           <div className="finding-tags">
             <span>{t(`categories.${finding.category}`)}</span>
-            <span>{t(`severity.${finding.severity}`)}</span>
-            <span>
-              {finding.reversible ? t('common.rollback') : t('common.none')}
-            </span>
+            {isSecurity ? (
+              <span>{t(`severity.${finding.severity}`)}</span>
+            ) : (
+              <>
+                <span>{t(`severity.${finding.severity}`)}</span>
+                <span>{finding.reversible ? t('common.rollback') : t('common.none')}</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -83,6 +199,8 @@ function FindingCard({
 
       {expanded && (
         <div className="finding-body">
+          {isSecurity && <SecurityActions finding={finding} t={t} />}
+
           <div className="detail-block">
             <div className="detail-title">
               <Info size={14} />

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import {
   BarChart3,
   Globe,
+  HelpCircle,
   History,
   LayoutDashboard,
   Moon,
@@ -24,6 +25,7 @@ interface LayoutProps {
   onTab: (tab: Tab) => void;
   onToggleTheme: () => void;
   onToggleLang: () => void;
+  onOpenFaq: () => void;
   t: (key: string) => string;
 }
 
@@ -45,6 +47,7 @@ export function Layout({
   onTab,
   onToggleTheme,
   onToggleLang,
+  onOpenFaq,
   t,
 }: LayoutProps) {
   return (
@@ -87,6 +90,15 @@ export function Layout({
             <span>{appInfo?.isAdmin ? t('common.admin') : t('common.user')}</span>
           </div>
           <div className="sidebar-actions">
+            <button
+              type="button"
+              className="icon-button"
+              onClick={onOpenFaq}
+              title={t('faq.open')}
+              aria-label={t('faq.open')}
+            >
+              <HelpCircle size={16} />
+            </button>
             <button type="button" className="icon-button" onClick={onToggleTheme} title="Theme">
               {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
             </button>

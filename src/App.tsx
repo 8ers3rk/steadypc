@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 import { Layout } from './components/Layout';
+import { FaqDialog } from './components/FaqDialog';
 import {
   ConfirmDialog,
   JournalView,
@@ -65,8 +66,10 @@ export default function App() {
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmReboot, setConfirmReboot] = useState(false);
+  const [faqOpen, setFaqOpen] = useState(false);
 
   const t = useCallback((key: string) => translate(lang, key), [lang]);
+  const closeFaq = useCallback(() => setFaqOpen(false), []);
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
@@ -240,6 +243,7 @@ export default function App() {
       onTab={setTab}
       onToggleTheme={() => setTheme((value) => (value === 'dark' ? 'light' : 'dark'))}
       onToggleLang={() => setLang((value) => (value === 'ru' ? 'en' : 'ru'))}
+      onOpenFaq={() => setFaqOpen(true)}
       t={t}
     >
       {error && (
@@ -309,6 +313,8 @@ export default function App() {
           t={t}
         />
       )}
+
+      {faqOpen && <FaqDialog lang={lang} t={t} onClose={closeFaq} />}
     </Layout>
   );
 }

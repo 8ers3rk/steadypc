@@ -1,0 +1,96 @@
+{
+  "ru": [
+    {
+      "id": "about",
+      "title": "Что делает SteadyPC",
+      "items": [
+        "SteadyPC читает состояние Windows локально: автозагрузку, диски, питание, процессы, сеть и настройки интерфейса.",
+        "Каждая находка содержит объяснение и исходные данные. Все проверки видны на экране диагностики, даже если проблема не найдена.",
+        "Изменения применяются только после вашего выбора. Пресеты — рекомендация, а не обязательный набор."
+      ]
+    },
+    {
+      "id": "expectations",
+      "title": "Чего ожидать от приложения",
+      "items": [
+        "Оценка состояния — ориентир. Она не обещает фиксированный прирост FPS, скорости интернета или «как новый» компьютер.",
+        "Если после изменения метрика не улучшилась, приложение показывает это прямо. Для обратимых действий доступен откат в журнале.",
+        "SteadyPC не заменяет антивирус и не обещает полной защиты. Он показывает индикаторы риска, а решение остаётся за вами."
+      ]
+    },
+    {
+      "id": "claims",
+      "title": "Как оценивать обещания других программ",
+      "items": [
+        "Обещания «ускорить ПК на 200%», «очистить оперативную память» или «удалить все угрозы одним нажатием» стоит воспринимать скептически.",
+        "Инструмент, который скрывает исходные данные и требует слепой веры, заслуживает дополнительной проверки.",
+        "Безопасное действие всегда объясняется, оставляет выбор пользователю и, где возможно, имеет откат."
+      ]
+    },
+    {
+      "id": "indicators",
+      "title": "Индикаторы риска — не приговор",
+      "items": [
+        "Проверки майнеров, подозрительных процессов, автозагрузки и заданий используют локальный список признаков, а не облачные базы.",
+        "Совпадение признаков — повод проверить путь, подпись и командную строку, а не основание для удаления.",
+        "SteadyPC не завершает процессы, не удаляет файлы и не помещает что-либо в карантин."
+      ]
+    },
+    {
+      "id": "signatures",
+      "title": "Свои признаки",
+      "items": [
+        "Список признаков встроен в приложение и меняется только вручную: приложение не скачивает обновления.",
+        "Свои признаки можно добавить в файл %APPDATA%\\SteadyPC\\security-signatures.json — он дополняет встроенный список.",
+        "Если в пользовательском файле ошибка, сканирование продолжается, а предупреждение отображается на диагностике."
+      ]
+    }
+  ],
+  "en": [
+    {
+      "id": "about",
+      "title": "What SteadyPC does",
+      "items": [
+        "SteadyPC reads Windows state locally: startup entries, disks, power settings, processes, network and interface settings.",
+        "Every finding includes an explanation and the raw data. All checks are visible on the diagnostics screen, even when nothing is wrong.",
+        "Changes are applied only after you select them. Presets are suggestions, not a required set."
+      ]
+    },
+    {
+      "id": "expectations",
+      "title": "What to expect",
+      "items": [
+        "The health score is an indicator, not a promise of a fixed FPS gain, faster internet or a PC that feels new.",
+        "If a metric does not improve after a change, the app says so plainly. Reversible actions can be undone from the journal.",
+        "SteadyPC does not replace an antivirus and does not promise full protection. It shows risk indicators; the decision stays with you."
+      ]
+    },
+    {
+      "id": "claims",
+      "title": "How to treat promises from other tools",
+      "items": [
+        "Claims such as 'speed up your PC by 200%', 'clean your RAM' or 'remove every threat with one click' deserve scepticism.",
+        "A tool that hides its raw data and asks for blind trust deserves a second opinion.",
+        "A safe action is explained, leaves the choice to the user and can be rolled back where possible."
+      ]
+    },
+    {
+      "id": "indicators",
+      "title": "Risk indicators are not a verdict",
+      "items": [
+        "Checks for miners, suspicious processes, startup entries and scheduled tasks use a local list of signals, not cloud databases.",
+        "A matching signal is a reason to inspect the path, signature and command line, not a reason to delete anything.",
+        "SteadyPC never terminates processes, deletes files or puts anything into quarantine."
+      ]
+    },
+    {
+      "id": "signatures",
+      "title": "Custom signals",
+      "items": [
+        "The signal list is built in and changes only manually: the app downloads no updates.",
+        "You can add your own signals in %APPDATA%\\SteadyPC\\security-signatures.json; they extend the built-in list.",
+        "If that file is invalid, scanning continues and the warning is shown on the diagnostics screen."
+      ]
+    }
+  ]
+}
