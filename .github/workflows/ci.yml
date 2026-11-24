@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Typecheck and build
+        run: npm run build
+
+      - name: Check for forbidden network clients
+        shell: pwsh
+        run: |
+          $files = Get-ChildItem -Path src, electron -Recurse -File -Include *.ts, *.tsx, *.js, *.json
+          $matches = $files | Select-String -Pattern 'fetch\(|axios|XMLHttpRequest|https?://|supabase'
+          if ($matches) {
+            $matches | ForEach-Object { Write-Error "$($_.Path):$($_.LineNumber): $($_.Line.Trim())" }
+            exit 1
+          }

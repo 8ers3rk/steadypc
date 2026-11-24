@@ -1,0 +1,39 @@
+{
+  "appId": "com.steadypc.app",
+  "productName": "SteadyPC",
+  "copyright": "Copyright © 2026 SteadyPC contributors",
+  "publish": null,
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "electron/icon.ico",
+    "artifactName": "SteadyPC-Setup-${version}.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "perMachine": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "SteadyPC"
+  },
+  "portable": {
+    "artifactName": "SteadyPC-Portable.exe"
+  }
+}
