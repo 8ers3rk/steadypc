@@ -1,7 +1,12 @@
 'use strict';
 
+const fs = require('fs');
+const path = require('path');
 const { finding, check } = require('./finding');
+const { psChecked, psq } = require('./commands');
 const BUILTIN_SIGNATURES = require('./security-signatures.json');
+
+const SIGNATURE_LIMIT = 80;
 
 function lower(value) {
   return String(value ?? '').toLowerCase();
@@ -40,6 +45,7 @@ function loadSignatures(override = null) {
     ]),
     suspiciousCommandPatterns: mergeStrings('suspiciousCommandPatterns'),
     suspiciousPathFragments: mergeStrings('suspiciousPathFragments'),
+    weakPathFragments: mergeStrings('weakPathFragments'),
     systemProcessNames: mergeStrings('systemProcessNames'),
     systemProcessDirectories: uniqueStrings([
       ...(BUILTIN_SIGNATURES.systemProcessDirectories || []),
@@ -51,6 +57,15 @@ function loadSignatures(override = null) {
 function includesAny(text, patterns) {
   const value = lower(text);
   return patterns.some((pattern) => value.includes(lower(pattern)));
+}
+
+function hasPathSignal(value, signatures, secondary = false) {
+  if (includesAny(value, signatures.suspiciousPathFragments)) return true;
+  return Boolean(secondary) && includesAny(value, signatures.weakPathFragments);
+}
+
+function isShellAction(text) {
+  return /(?:^|[\s"'])(?:powershell|pwsh|cmd)(?:\.exe)?(?=\s|$|")/i.test(String(text || ''));
 }
 
 function isPortMiner(port, signatures) {
@@ -278,6 +293,7 @@ function analyzeSecurity(snapshot, signatures = loadSignatures()) {
   // System process names outside system directories with no Microsoft signature.
   const masquerades = data.processes.filter(
     (process) =>
+      String(process.path || '').trim().length > 0 &&
       signatures.systemProcessNames.includes(lower(process.name)) &&
       !isUnderSystemDirectory(process.path, signatures) &&
       !isMicrosoftSigned(process.path, states),
@@ -371,16 +387,19 @@ function analyzeSecurity(snapshot, signatures = loadSignatures()) {
   function autorunUnsigned(item) {
     return !isValidStatus(item.signature || states?.[autorunPath(item)]?.status);
   }
+  function autorunRandom(item) {
+    return randomName.test(String(item.name || '').replace(/\.[^.]+$/, ''));
+  }
   const autorunAnomalies = data.autorun.filter(
     (item) =>
-      includesAny(autorunPath(item), signatures.suspiciousPathFragments) &&
+      hasPathSignal(autorunPath(item), signatures, autorunRandom(item)) &&
       autorunUnsigned(item) &&
-      randomName.test(String(item.name || '').replace(/\.[^.]+$/, '')),
+      autorunRandom(item),
   );
   const autorunPartial = data.autorun.filter(
     (item) =>
-      includesAny(autorunPath(item), signatures.suspiciousPathFragments) &&
-      (autorunUnsigned(item) || randomName.test(String(item.name || '').replace(/\.[^.]+$/, ''))),
+      hasPathSignal(autorunPath(item), signatures, autorunRandom(item)) &&
+      (autorunUnsigned(item) || autorunRandom(item)),
   );
   if (autorunAnomalies.length) {
     findings.push(
@@ -429,9 +448,10 @@ function analyzeSecurity(snapshot, signatures = loadSignatures()) {
   // Scheduled tasks are checked by their action, not by the task name.
   const taskHits = data.tasks.filter((task) => {
     const action = `${task.execute || ''} ${task.arguments || ''}`;
+    const shellAction = isShellAction(action);
     return (
-      includesAny(action, signatures.suspiciousPathFragments) ||
-      (includesAny(action, signatures.suspiciousCommandPatterns) && /powershell|cmd/i.test(action))
+      hasPathSignal(action, signatures, shellAction) ||
+      (includesAny(action, signatures.suspiciousCommandPatterns) && shellAction)
     );
   });
   if (taskHits.length) {
@@ -490,4 +510,149 @@ function analyzeSecurity(snapshot, signatures = loadSignatures()) {
   return { findings, checks };
 }
 
-module.exports = { loadSignatures, analyzeSecurity };
+function asArray(value) {
+  if (Array.isArray(value)) return value;
+  return value ? [value] : [];
+}
+
+async function parseSecurityPs(script, label, fallback) {
+  try {
+    return JSON.parse(await psChecked(script, label, 25000));
+  } catch (error) {
+    return fallback;
+  }
+}
+
+function readUserSignatures(warnings) {
+  const root = process.env.APPDATA;
+  if (!root) return {};
+  const file = path.join(root, 'SteadyPC', 'security-signatures.json');
+  if (!fs.existsSync(file)) return {};
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, 'utf8'));
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new Error('expected a JSON object');
+    }
+    return parsed;
+  } catch (error) {
+    warnings.push(`Пользовательские сигнатуры не загружены: ${error.message || String(error)}`);
+    return {};
+  }
+}
+
+async function collectSignatureStates(pathValues) {
+  const uniquePaths = [...new Set(
+    pathValues
+      .filter((value) => typeof value === 'string' && value.length > 2 && value.length < 512)
+      .map((value) => value.replace(/\0/g, '')),
+  )].slice(0, SIGNATURE_LIMIT);
+  if (!uniquePaths.length) return {};
+
+  const list = uniquePaths.map((value) => `'${psq(value)}'`).join(',');
+  const script = `
+    $paths = @(${list})
+    $result = @{}
+    foreach ($item in $paths) {
+      if (-not (Test-Path -LiteralPath $item -ErrorAction SilentlyContinue)) { continue }
+      try {
+        $signature = Get-AuthenticodeSignature -FilePath $item -ErrorAction Stop
+        $signer = ''
+        if ($signature.SignerCertificate) { $signer = [string]$signature.SignerCertificate.Subject }
+        $result[$item] = @{ status = [string]$signature.Status.ToString(); signer = $signer }
+      } catch {
+        $result[$item] = @{ status = 'error'; signer = '' }
+      }
+    }
+    $result | ConvertTo-Json -Compress -Depth 4
+  `;
+  const parsed = await parseSecurityPs(script, 'Подписи процессов', {});
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+}
+
+function normalizeDefender(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  if (value.realTimeProtectionEnabled === undefined && value.antimalwareEnabled === undefined) return null;
+  return {
+    realTimeProtectionEnabled: Boolean(value.realTimeProtectionEnabled),
+    antimalwareEnabled: Boolean(value.antimalwareEnabled),
+  };
+}
+
+async function collectSecurity(autorun = []) {
+  const warnings = [];
+  const processScript = `
+    Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | ForEach-Object {
+      [pscustomobject]@{
+        pid = [int]$_.ProcessId
+        parentPid = [int]$_.ParentProcessId
+        name = [string]$_.Name
+        path = [string]$_.ExecutablePath
+        commandLine = [string]$_.CommandLine
+      }
+    } | ConvertTo-Json -Compress -Depth 3
+  `;
+  const networkScript = `
+    Get-NetTCPConnection -State Established -ErrorAction SilentlyContinue | ForEach-Object {
+      [pscustomobject]@{
+        pid = [int]$_.OwningProcess
+        address = [string]$_.RemoteAddress
+        port = [int]$_.RemotePort
+      }
+    } | ConvertTo-Json -Compress -Depth 3
+  `;
+  const taskScript = `
+    Get-ScheduledTask -ErrorAction SilentlyContinue | ForEach-Object {
+      $task = $_
+      foreach ($action in $task.Actions) {
+        [pscustomobject]@{
+          name = [string]$task.TaskName
+          path = [string]$task.TaskPath
+          execute = [string]$action.Execute
+          arguments = [string]$action.Arguments
+          state = [string]$task.State
+        }
+      }
+    } | ConvertTo-Json -Compress -Depth 4
+  `;
+  const defenderScript = `
+    try {
+      $status = Get-MpComputerStatus -ErrorAction Stop
+      @{
+        realTimeProtectionEnabled = [bool]$status.RealTimeProtectionEnabled
+        antimalwareEnabled = [bool]$status.AntimalwareEnabled
+      } | ConvertTo-Json -Compress
+    } catch {
+      '{}'
+    }
+  `;
+
+  const [processes, connections, tasks, defender] = await Promise.all([
+    parseSecurityPs(processScript, 'Процессы', []),
+    parseSecurityPs(networkScript, 'Подключения', []),
+    parseSecurityPs(taskScript, 'Задания планировщика', []),
+    parseSecurityPs(defenderScript, 'Состояние Defender', null),
+  ]);
+
+  const processList = asArray(processes);
+  const autorunList = asArray(autorun);
+  const signatureStates = await collectSignatureStates([
+    ...processList.map((item) => item.path),
+    ...autorunList.map((item) => item.path || item.command),
+  ].filter(Boolean));
+
+  const report = analyzeSecurity(
+    {
+      processes: processList,
+      connections: asArray(connections),
+      tasks: asArray(tasks),
+      autorun: autorunList,
+      defender: normalizeDefender(defender),
+      signatureStates,
+    },
+    loadSignatures(readUserSignatures(warnings)),
+  );
+
+  return { ...report, warnings };
+}
+
+module.exports = { loadSignatures, analyzeSecurity, collectSecurity };

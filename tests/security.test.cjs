@@ -140,6 +140,13 @@ test('an unsigned svchost.exe outside System32 is a masquerade', () => {
   assert.ok(finding.evidence.some((line) => line.includes('601')));
 });
 
+test('a system process with an unreadable path is not a masquerade', () => {
+  const process = proc(744, 'smss.exe', '', '');
+  const report = analyzeSecurity(snapshot({ processes: [process] }), signatures);
+
+  assert.equal(report.findings.some((item) => item.id === 'security-process-masquerade'), false);
+});
+
 test('encoded PowerShell is reported only for PowerShell processes', () => {
   const shell = proc(
     11,
@@ -189,6 +196,44 @@ test('a scheduled task running from Temp is reported', () => {
   const finding = report.findings.find((item) => item.id === 'security-scheduled-task');
   assert.ok(finding);
   assert.ok(finding.evidence.some((line) => line.includes('DailyUpdate')));
+});
+
+test('a vendor task writing a ProgramData log is not a finding', () => {
+  const report = analyzeSecurity(
+    snapshot({
+      tasks: [
+        {
+          name: 'VendorTask',
+          path: '\\Vendor',
+          execute: 'C:\\Program Files\\Vendor\\tool.exe',
+          arguments: '/log C:\\ProgramData\\Vendor\\tool.log',
+          state: 'Ready',
+        },
+      ],
+    }),
+    signatures,
+  );
+
+  assert.equal(report.findings.some((item) => item.id === 'security-scheduled-task'), false);
+});
+
+test('a Defender MpCmdRun task is not treated as a shell task', () => {
+  const report = analyzeSecurity(
+    snapshot({
+      tasks: [
+        {
+          name: 'Windows Defender Cache Maintenance',
+          path: '\\Microsoft\\Windows\\Windows Defender\\',
+          execute: 'C:\\ProgramData\\Microsoft\\Windows Defender\\Platform\\4.18\\MpCmdRun.exe',
+          arguments: '-IdleTask -TaskName WdCacheMaintenance',
+          state: 'Ready',
+        },
+      ],
+    }),
+    signatures,
+  );
+
+  assert.equal(report.findings.some((item) => item.id === 'security-scheduled-task'), false);
 });
 
 test('an autorun anomaly needs a user path, no signature and a random name', () => {

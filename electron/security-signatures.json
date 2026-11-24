@@ -47,9 +47,11 @@
     "\\temp\\",
     "\\appdata\\roaming\\",
     "\\downloads\\",
-    "\\programdata\\",
     "\\public\\",
     "\\users\\public\\"
+  ],
+  "weakPathFragments": [
+    "\\programdata\\"
   ],
   "systemProcessNames": [
     "svchost.exe",

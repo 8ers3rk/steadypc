@@ -6,6 +6,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { scoreReportFindings } = require('./scoring');
 const { finding, check } = require('./finding');
+const { collectSecurity } = require('./security');
 const { ps, psChecked, run, isAdmin, POWER_PLANS, parseTcpLevel } = require('./commands');
 
 const APP_VERSION = require('../package.json').version;
@@ -287,6 +288,7 @@ async function collectStartup() {
 
   return {
     metrics: { startupTotal: list.length, startupThirdParty: thirdParty, startupUnsigned: unsigned },
+    autorun: list,
     findings,
     checks: [
       check({
@@ -892,8 +894,9 @@ async function collectPrivacy() {
 async function runScan() {
   const started = Date.now();
   const system = await collectSystemInfo();
+  const startupPromise = collectStartup();
   const collectors = [
-    collectStartup(),
+    startupPromise,
     collectStorage(system),
     collectPower(),
     collectProcesses(system),
@@ -901,6 +904,7 @@ async function runScan() {
     collectVisual(),
     collectUpdates(system),
     collectPrivacy(),
+    startupPromise.then((value) => collectSecurity(value.autorun || []), () => collectSecurity([])),
   ];
 
   const results = await Promise.allSettled(collectors);
@@ -914,6 +918,7 @@ async function runScan() {
       findings.push(...(result.value.findings || []));
       checks.push(...(result.value.checks || []));
       Object.assign(metrics, result.value.metrics || {});
+      warnings.push(...(result.value.warnings || []));
     } else {
       warnings.push(result.reason?.message || String(result.reason));
     }
