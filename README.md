@@ -6,7 +6,7 @@
 
 ## Скачать
 
-Готовые сборки для Windows x64 находятся в [последнем релизе](https://github.com/8ers3rk/steadypc/releases/latest): установщик `SteadyPC-Setup-1.0.0.exe` и портативная версия `SteadyPC-Portable.exe`. Сборки не подписаны сертификатом; контрольные суммы SHA-256 указаны в примечаниях к релизу.
+Готовые сборки для Windows x64 находятся в [последнем релизе](https://github.com/8ers3rk/steadypc/releases/latest): установщик `SteadyPC-Setup-1.1.0.exe` и портативная версия `SteadyPC-Portable.exe`. Сборки не подписаны сертификатом; контрольные суммы SHA-256 указаны в примечаниях к релизу.
 
 ## Что SteadyPC делает
 

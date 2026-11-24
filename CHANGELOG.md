@@ -1,13 +1,18 @@
 # Changelog
 
-## Unreleased
+## [1.1.0] - 2026-11-24
 
-- Added eight offline risk-indicator checks for miners, suspicious processes, startup entries, scheduled tasks and built-in protection state.
+### Added
+
+- Eight offline risk-indicator checks for miners, suspicious processes, startup entries, scheduled tasks and built-in protection state.
+- A built-in signature list with an optional manual override at `%APPDATA%\SteadyPC\security-signatures.json`; no network is used.
+- Safe actions on indicator cards: reveal the file, copy evidence and open Task Manager.
+- An in-app FAQ in Russian and English with no external links or product names.
+- Tests for signature merging, heuristic confidence rules, score isolation and FAQ content.
+
+### Changed
+
 - Risk indicators are diagnostic only: they do not affect the health score, cannot be applied as changes and never trigger removal, process termination or quarantine.
-- Added a built-in signature list with an optional manual override at `%APPDATA%\SteadyPC\security-signatures.json`; no network is used.
-- Added safe actions on indicator cards: reveal the file, copy evidence and open Task Manager.
-- Added an in-app FAQ in Russian and English with no external links or product names.
-- Added tests for signature merging, heuristic confidence rules, score isolation and FAQ content.
 
 ## 1.0.0
 
