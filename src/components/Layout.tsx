@@ -87,6 +87,7 @@ export function Layout({
           </div>
           <div className="sidebar-meta">
             <span>{t('footer.version')} {appInfo?.version || '—'}</span>
+            <span>{t('footer.author')}</span>
             <span>{appInfo?.isAdmin ? t('common.admin') : t('common.user')}</span>
           </div>
           <div className="sidebar-actions">

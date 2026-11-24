@@ -2,7 +2,7 @@
   "name": "steadypc",
   "version": "1.2.0",
   "description": "SteadyPC — локальная диагностика и аккуратная настройка Windows без телеметрии",
-  "author": "SteadyPC contributors",
+  "author": "8ers3rk",
   "license": "MIT",
   "private": false,
   "main": "electron/main.js",

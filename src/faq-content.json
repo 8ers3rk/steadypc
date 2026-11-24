@@ -6,7 +6,8 @@
       "items": [
         "SteadyPC читает состояние Windows локально: автозагрузку, диски, питание, процессы, сеть и настройки интерфейса.",
         "Каждая находка содержит объяснение и исходные данные. Все проверки видны на экране диагностики, даже если проблема не найдена.",
-        "Изменения применяются только после вашего выбора. Пресеты — рекомендация, а не обязательный набор."
+        "Изменения применяются только после вашего выбора. Пресеты — рекомендация, а не обязательный набор.",
+        "Автор проекта — @8ers3rk. Ник указан в интерфейсе и в метаданных сборок."
       ]
     },
     {
@@ -62,14 +63,15 @@
       "items": [
         "SteadyPC reads Windows state locally: startup entries, disks, power settings, processes, network and interface settings.",
         "Every finding includes an explanation and the raw data. All checks are visible on the diagnostics screen, even when nothing is wrong.",
-        "Changes are applied only after you select them. Presets are suggestions, not a required set."
+        "Changes are applied only after you select them. Presets are suggestions, not a required set.",
+        "The project author is @8ers3rk. The handle is shown in the app and included in build metadata."
       ]
     },
     {
       "id": "expectations",
       "title": "What to expect",
       "items": [
-        "The health score is an indicator, not a promise of a fixed FPS gain, faster internet or a PC that feels new.",
+        "The settings score is an author-made indicator, not a promise of a fixed FPS gain, faster internet or a PC that feels new.",
         "If a metric does not improve after a change, the app says so plainly. Reversible actions can be undone from the journal.",
         "SteadyPC does not replace an antivirus and does not promise full protection. It shows risk indicators; the decision stays with you."
       ]

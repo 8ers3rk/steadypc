@@ -176,6 +176,7 @@ const messages: Record<Lang, Record<string, string>> = {
 
     'footer.offline': 'Без сети · без телеметрии · без аккаунта',
     'footer.version': 'Версия',
+    'footer.author': 'Автор: @8ers3rk',
 
     'security.indicator': 'Индикатор риска',
     'security.noAntivirus': 'Индикаторы риска — не антивирус. Проверка ищет только простые локальные признаки, пропускает сложные угрозы и не заменяет встроенную защиту Windows. Отсутствие индикаторов не означает, что система защищена.',
@@ -379,6 +380,7 @@ const messages: Record<Lang, Record<string, string>> = {
 
     'footer.offline': 'Offline · no telemetry · no account',
     'footer.version': 'Version',
+    'footer.author': 'Author: @8ers3rk',
 
     'security.indicator': 'Risk indicator',
     'security.noAntivirus': 'Risk indicators are not an antivirus. The check looks only for simple local signals, misses sophisticated threats and does not replace built-in Windows protection. No indicators does not mean the system is protected.',
