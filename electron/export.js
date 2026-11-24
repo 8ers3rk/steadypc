@@ -57,9 +57,26 @@ function buildHtml(payload) {
         `<tr><td>${escapeHtml(entry.createdAt || '')}</td><td>${escapeHtml(entry.title || '')}</td><td>${escapeHtml(entry.risk || '')}</td><td>${escapeHtml(entry.rolledBackAt ? 'rolled-back' : 'applied')}</td></tr>`,
     )
     .join('');
+  const comparison = payload.comparison;
+  let comparisonHtml = '<p class="muted">No comparison data.</p>';
+  if (comparison) {
+    const before = comparison.before?.score?.value ?? '—';
+    const after = comparison.after?.score?.value ?? '—';
+    const resultRows = (Array.isArray(comparison.results) ? comparison.results : [])
+      .slice(0, 200)
+      .map(
+        (result) =>
+          `<tr><td>${escapeHtml(result.id || '')}</td><td>${escapeHtml(result.title || '')}</td><td>${escapeHtml(result.success ? 'success' : 'failed')}</td><td>${escapeHtml(result.message || result.error || '')}</td></tr>`,
+      )
+      .join('');
+    comparisonHtml = `
+<p>Score before: ${escapeHtml(before)} · after: ${escapeHtml(after)}</p>
+<p>Restore point: ${escapeHtml(comparison.restorePoint?.success ? 'created' : 'not created')}</p>
+<table><thead><tr><th>ID</th><th>Action</th><th>Status</th><th>Message</th></tr></thead><tbody>${resultRows || '<tr><td colspan="4" class="muted">No comparison actions.</td></tr>'}</tbody></table>`;
+  }
 
   return `<!doctype html>
-<html lang="ru">
+<html lang="${escapeHtml(payload.language || 'ru')}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -74,6 +91,7 @@ code{background:#f5f5f5;padding:2px 4px;border-radius:4px}
 <body>
 <h1>SteadyPC report</h1>
 <p class="muted">Exported: ${escapeHtml(payload.exportedAt || '')}</p>
+<p class="muted">Log path: ${escapeHtml(payload.logPath || '—')}</p>
 <div class="card">
 <h2>Scan</h2>
 <p>Score: <strong>${escapeHtml(score)}</strong></p>
@@ -89,6 +107,10 @@ code{background:#f5f5f5;padding:2px 4px;border-radius:4px}
 <div class="card">
 <h2>Warnings</h2>
 ${warnings ? `<ul>${warnings}</ul>` : '<p class="muted">No warnings.</p>'}
+</div>
+<div class="card">
+<h2>Comparison</h2>
+${comparisonHtml}
 </div>
 <div class="card">
 <h2>Journal</h2>

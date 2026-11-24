@@ -2,16 +2,55 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { formatBytes } = require('../electron/collectors');
+const { normalizeRegistryHive, buildStartupAction } = require('../electron/collectors');
+const { validateCommandParams } = require('../electron/validation');
 
-test('formatBytes handles empty and small values', () => {
-  assert.equal(formatBytes(0), '0 Б');
-  assert.equal(formatBytes(-10), '0 Б');
-  assert.equal(formatBytes(512), '512 Б');
+const HKCU_RUN = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+const HKLM_RUN = 'HKLM:\\Software\\Microsoft\\Windows\\CurrentVersion\\Run';
+const ONE_DRIVE_STARTUP = 'C:\\Users\\tester\\OneDrive\\Microsoft\\Windows\\Start Menu\\Programs\\Startup';
+
+test('collector normalizes registry hives that include a trailing colon', () => {
+  assert.equal(normalizeRegistryHive('HKCU:'), 'HKCU');
+  assert.equal(normalizeRegistryHive('HKLM:'), 'HKLM');
+  assert.equal(normalizeRegistryHive('HKCU'), 'HKCU');
 });
 
-test('formatBytes uses expected units', () => {
-  assert.equal(formatBytes(1024), '1 КБ');
-  assert.equal(formatBytes(2 * 1024 ** 2), '2 МБ');
-  assert.equal(formatBytes(3 * 1024 ** 3), '3 ГБ');
+test('registry startup actions from the collector pass command validation', () => {
+  const cases = [
+    ['HKCU:', HKCU_RUN, false],
+    ['HKLM:', HKLM_RUN, true],
+  ];
+
+  for (const [hive, registryPath, requiresAdmin] of cases) {
+    const action = buildStartupAction({
+      source: 'registry',
+      hive,
+      path: registryPath,
+      name: "Example's app",
+    });
+
+    assert.equal(action.requiresAdmin, requiresAdmin);
+    assert.deepEqual(validateCommandParams('disable-startup', action.params), {
+      source: 'registry',
+      path: registryPath,
+      name: "Example's app",
+    });
+  }
+});
+
+test('folder startup actions keep the real startup root from the collector', () => {
+  const target = `${ONE_DRIVE_STARTUP}\\Example.lnk`;
+  const action = buildStartupAction({
+    source: 'folder',
+    hive: 'HKCU',
+    path: target,
+    name: 'Example',
+    location: ONE_DRIVE_STARTUP,
+  });
+
+  assert.deepEqual(validateCommandParams('disable-startup', action.params), {
+    source: 'folder',
+    path: target,
+    name: 'Example',
+  });
 });

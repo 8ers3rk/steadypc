@@ -14,7 +14,7 @@ const CONTROL_CHARACTERS = /[\u0000-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u206
 const TEXT_CONTROL_CHARACTERS = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u202a-\u202e\u2066-\u2069]/;
 const WINDOWS_PATH = /^[A-Za-z]:\\/;
 const WINDOWS_PATH_FORBIDDEN = /[*?"<>|]|\.\./;
-const SAFE_NAME = /^[^\\/:*?"<>|;'$`\r\n]+$/;
+const SAFE_NAME = /^[^\\/;$`\r\n]+$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_ID = /^[a-z0-9][a-z0-9._:-]{0,127}$/i;
 
@@ -61,7 +61,7 @@ function startupFolderRoots() {
 }
 
 function validateStartupParams(params) {
-  assertOnlyKeys(params, ['source', 'hive', 'path', 'name']);
+  assertOnlyKeys(params, ['source', 'hive', 'path', 'name', 'root']);
   const source = plainText(params.source, 16, 'Источник');
   const name = plainText(params.name, 256, 'Имя записи');
   const target = plainText(params.path, 512, 'Путь');
@@ -73,10 +73,18 @@ function validateStartupParams(params) {
       fail('Недопустимый путь ярлыка автозагрузки');
     }
     if (!/\.lnk$/i.test(target)) fail('Путь должен указывать на ярлык автозагрузки');
+
+    let roots = startupFolderRoots();
+    if (params.root !== undefined) {
+      const root = plainText(params.root, 512, 'Папка автозагрузки');
+      if (!WINDOWS_PATH.test(root) || WINDOWS_PATH_FORBIDDEN.test(root)) {
+        fail('Недопустимая папка автозагрузки');
+      }
+      roots = [root.replace(/\\+$/, '').replace(/\//g, '\\').toLowerCase()];
+    }
+
     const normalized = target.toLowerCase();
-    const allowedRoot = startupFolderRoots().some(
-      (root) => normalized === root || normalized.startsWith(`${root}\\`),
-    );
+    const allowedRoot = roots.some((root) => normalized === root || normalized.startsWith(`${root}\\`));
     if (!allowedRoot) fail('Ярлык находится вне папки автозагрузки');
   } else {
     if (!STARTUP_REGISTRY_PATHS.has(target)) fail('Путь реестра не разрешён');

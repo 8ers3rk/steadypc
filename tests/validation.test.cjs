@@ -93,6 +93,7 @@ test('journal identifiers and safe actions reject malformed input', () => {
 
   assert.equal(validateSecurityPath('C:\\Users\\Public\\file.exe'), 'C:\\Users\\Public\\file.exe');
   assert.throws(() => validateSecurityPath('..\\Windows\\file.exe'), /Некорректный путь/);
+  assert.throws(() => validateSecurityPath('C:\\Users\\..\\Windows\\file.exe'), /Некорректный путь/);
   assert.throws(() => validateSecurityPath('C:\\Temp\\file.exe\u0000'), /символы/);
   assert.equal(validateSecurityText('PID: 42\nПуть: C:\\file.exe'), 'PID: 42\nПуть: C:\\file.exe');
   assert.throws(() => validateSecurityText('x'.repeat(9000)), /слишком длинное/);

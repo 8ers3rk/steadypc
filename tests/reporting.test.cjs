@@ -77,8 +77,25 @@ test('HTML export escapes untrusted text and contains no external resources', ()
     warnings: ['<script>alert(1)</script>'],
     findings: [{ ...report.findings[0], title: '"quoted" & <tag>' }],
   };
-  const html = buildHtml({ report: hostile, journal: [{ createdAt: 'now', title: '<bad>', risk: 'low' }] });
+  const comparison = {
+    before: report,
+    after: { ...report, score: { ...report.score, value: 91 } },
+    results: [{ id: 'startup-1', title: '<result>', success: true, message: 'done' }],
+    restorePoint: { success: true },
+  };
+  const html = buildHtml({
+    report: hostile,
+    comparison,
+    language: 'en',
+    logPath: 'C:\\Users\\tester\\AppData\\Roaming\\SteadyPC\\logs\\steadypc.log',
+    journal: [{ createdAt: 'now', title: '<bad>', risk: 'low' }],
+  });
 
+  assert.match(html, /<html lang="en">/);
+  assert.match(html, /Log path: C:\\Users\\tester\\AppData\\Roaming\\SteadyPC\\logs\\steadypc\.log/);
+  assert.match(html, /<h2>Comparison<\/h2>/);
+  assert.match(html, /Score before: 82 · after: 91/);
+  assert.match(html, /&lt;result&gt;/);
   assert.match(html, /&lt;script&gt;/);
   assert.doesNotMatch(html, /<script>/);
   assert.match(html, /&quot;quoted&quot; &amp; &lt;tag&gt;/);

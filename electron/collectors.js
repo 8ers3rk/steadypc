@@ -15,6 +15,28 @@ function hash(value) {
   return crypto.createHash('sha1').update(String(value)).digest('hex').slice(0, 10);
 }
 
+function normalizeRegistryHive(value) {
+  const hive = String(value || '').trim().toUpperCase();
+  return hive.endsWith(':') ? hive.slice(0, -1) : hive;
+}
+
+function buildStartupAction(item) {
+  const hive = normalizeRegistryHive(item.hive);
+  const params = {
+    source: item.source,
+    hive,
+    path: item.path,
+    name: item.name,
+  };
+  if (item.source === 'folder' && item.location) params.root = item.location;
+
+  return {
+    commandId: 'disable-startup',
+    params,
+    requiresAdmin: hive === 'HKLM',
+  };
+}
+
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 Б';
   const units = ['Б', 'КБ', 'МБ', 'ГБ', 'ТБ'];
@@ -272,16 +294,7 @@ async function collectStartup() {
         reversible: true,
         recommended: true,
         presets: ['balanced', 'performance', 'gaming'],
-        action: {
-          commandId: 'disable-startup',
-          params: {
-            source: item.source,
-            hive: item.hive,
-            path: item.path,
-            name: item.name,
-          },
-          requiresAdmin: item.hive === 'HKLM',
-        },
+        action: buildStartupAction(item),
       }),
     );
   }
@@ -937,4 +950,4 @@ async function runScan() {
   };
 }
 
-module.exports = { runScan, formatBytes, collectSystemInfo, check };
+module.exports = { runScan, formatBytes, collectSystemInfo, check, normalizeRegistryHive, buildStartupAction };

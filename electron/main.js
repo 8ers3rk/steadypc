@@ -9,6 +9,7 @@ const { executeCommand, rollbackCommand, isAdmin, createRestorePoint, restartAsA
 const { readJournal, addEntry, markRolledBack } = require('./journal');
 const { appendLog } = require('./log');
 const { exportReport } = require('./export');
+const { createMutex } = require('./lock');
 const {
   validatePresetId,
   validateIds,
@@ -20,9 +21,10 @@ const {
   validateLanguage,
 } = require('./validation');
 
+const writeMutex = createMutex();
+
 let mainWindow = null;
 let lastScan = null;
-let applying = false;
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -88,23 +90,21 @@ ipcMain.handle('plan:preview', (event, ids) => {
 
 ipcMain.handle('plan:apply', async (event, ids) => {
   if (!lastScan) throw new Error('Сначала выполните сканирование');
-  if (applying) throw new Error('Другое применение уже выполняется');
 
   const actions = buildPreview(lastScan.findings, validateIds(ids, lastScan.findings.map((item) => item.id)));
   if (!actions.length) return { needsAdmin: false, restorePoint: null, results: [] };
   logSafe('info', 'plan:apply-start', { count: actions.length });
 
-  const needsAdmin = actions.some(requiresPrivileges) && !isAdmin();
-  if (needsAdmin) {
-    return { needsAdmin: true, actions, restorePoint: null, results: [] };
-  }
+  const guarded = await writeMutex.runExclusive(async () => {
+    const needsAdmin = actions.some(requiresPrivileges) && !isAdmin();
+    if (needsAdmin) {
+      return { needsAdmin: true, actions, restorePoint: null, results: [] };
+    }
 
-  const shouldCreatePoint = actions.some((action) => action.risk !== 'low' || requiresPrivileges(action));
-  const restorePoint = shouldCreatePoint ? await createRestorePoint() : null;
+    const shouldCreatePoint = actions.some((action) => action.risk !== 'low' || requiresPrivileges(action));
+    const restorePoint = shouldCreatePoint ? await createRestorePoint() : null;
+    const results = [];
 
-  applying = true;
-  const results = [];
-  try {
     for (const action of actions) {
       try {
         const executed = await executeCommand(action.commandId, action.params);
@@ -136,16 +136,17 @@ ipcMain.handle('plan:apply', async (event, ids) => {
         });
       }
     }
-  } finally {
-    applying = false;
-  }
 
-  logSafe('info', 'plan:apply-complete', {
-    succeeded: results.filter((item) => item.success).length,
-    failed: results.filter((item) => !item.success).length,
-    restorePoint: Boolean(restorePoint?.success),
+    logSafe('info', 'plan:apply-complete', {
+      succeeded: results.filter((item) => item.success).length,
+      failed: results.filter((item) => !item.success).length,
+      restorePoint: Boolean(restorePoint?.success),
+    });
+    return { needsAdmin: false, restorePoint, results };
   });
-  return { needsAdmin: false, restorePoint, results };
+
+  if (guarded.locked) throw new Error('Другое изменение уже выполняется');
+  return guarded.value;
 });
 
 ipcMain.handle('tools:list', () => listTools());
@@ -168,15 +169,14 @@ ipcMain.handle('tools:run', async (event, id) => {
   }
 
   if (tool.requiresAdmin && !isAdmin()) return { needsAdmin: true };
-  if (applying) throw new Error('Другое изменение уже выполняется');
-  logSafe('info', 'tool:run-start', { tool: toolId });
 
-  const restorePoint = tool.risk !== 'low' || tool.requiresAdmin
-    ? await createRestorePoint()
-    : null;
+  const guarded = await writeMutex.runExclusive(async () => {
+    logSafe('info', 'tool:run-start', { tool: toolId });
 
-  applying = true;
-  try {
+    const restorePoint = tool.risk !== 'low' || tool.requiresAdmin
+      ? await createRestorePoint()
+      : null;
+
     let executed;
     try {
       executed = await executeCommand(tool.id, tool.params);
@@ -215,19 +215,25 @@ ipcMain.handle('tools:run', async (event, id) => {
       entryId: entry.id,
       data: executed.data,
     };
-  } finally {
-    applying = false;
-  }
+  });
+
+  if (guarded.locked) throw new Error('Другое изменение уже выполняется');
+  return guarded.value;
 });
 
 ipcMain.handle('plan:rollback', async (event, entryId) => {
   const id = validateEntryId(entryId);
-  const entry = readJournal(app).find((item) => item.id === id);
-  if (!entry) throw new Error('Запись журнала не найдена');
-  await rollbackCommand(entry.commandId, entry.rollbackData);
-  markRolledBack(app, id);
-  logSafe('info', 'journal:rollback', { commandId: entry.commandId });
-  return { success: true };
+  const guarded = await writeMutex.runExclusive(async () => {
+    const entry = readJournal(app).find((item) => item.id === id);
+    if (!entry) throw new Error('Запись журнала не найдена');
+    await rollbackCommand(entry.commandId, entry.rollbackData);
+    markRolledBack(app, id);
+    logSafe('info', 'journal:rollback', { commandId: entry.commandId });
+    return { success: true };
+  });
+
+  if (guarded.locked) throw new Error('Другое изменение уже выполняется');
+  return guarded.value;
 });
 
 ipcMain.handle('journal:list', () => readJournal(app));
